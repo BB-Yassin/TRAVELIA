@@ -1,3 +1,6 @@
 from django.contrib import admin
+from .models import Recommendation
 
-# Register your models here.
+@admin.register(Recommendation)
+class RecommendationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'offer', 'match_score', 'is_active', 'created_at')
