@@ -14,7 +14,7 @@ class Reclamation(models.Model):
     )
 
     reservation = models.ForeignKey(
-        'reservations.Reservation',
+        'reservation.Reservation',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
