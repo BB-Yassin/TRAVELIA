@@ -1,0 +1,289 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+/* === Container global === */
+.detail-container {
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #f0f4f8, #d9e2ec);
+    min-height: 100vh;
+    font-family: 'Poppins', sans-serif;
+}
+
+/* === Card hébergement === */
+.detail-card {
+    max-width: 950px;
+    margin: auto;
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 1s ease;
+}
+.detail-card.reveal {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* === Image === */
+.detail-img {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+.detail-img:hover {
+    transform: scale(1.05);
+}
+
+/* === Contenu === */
+.detail-body {
+    padding: 35px 30px;
+}
+.detail-body h1 {
+    font-size: 32px;
+    background: linear-gradient(90deg, #0077b6, #00b4d8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 20px;
+}
+
+/* === Info list === */
+.info-item {
+    margin-bottom: 12px;
+    font-size: 18px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.3s ease;
+}
+.info-item:hover {
+    transform: translateX(5px);
+}
+.info-item span {
+    font-weight: 600;
+    color: #0077b6;
+}
+
+/* === Bouton retour === */
+.btn-retour {
+    display: inline-block;
+    padding: 12px 20px;
+    background: linear-gradient(90deg,#0077b6,#00b4d8);
+    color: white;
+    font-weight: 600;
+    border-radius: 12px;
+    margin-top: 25px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+.btn-retour:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* === Sections map & météo === */
+.map-section, .weather-section {
+    margin-top: 35px;
+    padding: 25px;
+    background: white;
+    border-radius: 18px;
+    box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.map-section:hover, .weather-section:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+}
+
+/* === Titres sections === */
+.map-title, .weather-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0077b6;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.map-title i, .weather-title i {
+    font-size: 28px;
+    color: #00b4d8;
+}
+
+/* === Iframe map === */
+.map-frame {
+    width: 100%;
+    height: 380px;
+    border-radius: 14px;
+    border: none;
+    transition: transform 0.5s ease, box-shadow 0.5s ease;
+}
+.map-frame:hover {
+    transform: scale(1.03);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+/* === Weather cards === */
+.weather-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.weather-card {
+    flex: 1 1 120px;
+    background: linear-gradient(135deg, #00b4d8, #90e0ef);
+    color: white;
+    padding: 15px 20px;
+    border-radius: 15px;
+    text-align: center;
+    font-weight: 600;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: fadeInUp 0.8s forwards;
+}
+
+.weather-card:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.weather-card i {
+    font-size: 28px;
+    margin-bottom: 5px;
+    display: block;
+}
+
+@keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* === Liste offres === */
+ul li a {
+    color: #00b4d8;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+ul li a:hover {
+    color: #0077b6;
+    text-decoration: underline;
+}
+</style>
+
+<div class="detail-container">
+    <div class="detail-card">
+        {% if hebergement.image %}
+            <img src="{{ hebergement.image.url }}" class="detail-img">
+        {% else %}
+            <img src="{% static 'default.jpg' %}" class="detail-img">
+        {% endif %}
+
+        <div class="detail-body">
+            <h1>{{ hebergement.nom_hebergement }}</h1>
+
+            <p class="info-item"><span>Type :</span> {{ hebergement.get_type_hebergement_display }}</p>
+            <p class="info-item"><span>Destination :</span> {{ hebergement.destination.nom_destination }} ({{ hebergement.destination.pays }})</p>
+            <p class="info-item"><span>Prix par nuit :</span> {{ hebergement.prix_par_nuit }} TND</p>
+            <p class="info-item"><span>Étoiles :</span> ⭐ {{ hebergement.etoiles }}</p>
+
+            {% if hebergement.offres.all %}
+                <p class="info-item"><span>Apparaît dans ces offres :</span></p>
+                <ul>
+                    {% for o in hebergement.offres.all %}
+                        <li><a href="{% url 'offre_detail' o.pk %}">{{ o.titre }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
+            <!-- MAP -->
+            <div class="map-section">
+                <h3 class="map-title"><i class="fas fa-map-marker-alt"></i> Emplacement géographique</h3>
+                <iframe
+                    class="map-frame"
+                    loading="lazy"
+                    allowfullscreen
+                    src="https://www.google.com/maps?q={{ hebergement.destination.nom_destination|urlencode }}+{{ hebergement.destination.pays|urlencode }}&output=embed">
+                </iframe>
+                <p style="margin-top: 12px; font-size: 16px; color:#333;">
+                    📍 <strong>{{ hebergement.destination.nom_destination }}</strong>, {{ hebergement.destination.pays }}
+                </p>
+            </div>
+
+            <!-- WEATHER -->
+            <div class="weather-section">
+                <h3 class="weather-title"><i class="fas fa-cloud-sun"></i> Météo actuelle</h3>
+                <div id="weather" class="weather-cards">
+                    <!-- Cards météo générées via JS -->
+                </div>
+            </div>
+
+            <a href="{% url 'liste_hebergements' %}" class="btn-retour">⟵ Retour à la liste</a>
+        </div>
+    </div>
+</div>
+
+<!-- Scroll reveal animation -->
+<script>
+function revealOnScroll() {
+    const card = document.querySelector('.detail-card');
+    const windowHeight = window.innerHeight;
+    const revealTop = card.getBoundingClientRect().top;
+    if (revealTop < windowHeight - 50) {
+        card.classList.add('reveal');
+    }
+}
+window.addEventListener('scroll', revealOnScroll);
+window.addEventListener('load', revealOnScroll);
+</script>
+
+<!-- Weather fetch -->
+<script>
+const weatherDiv = document.getElementById('weather');
+const city = "{{ hebergement.destination.nom_destination }}";
+const country = "{{ hebergement.destination.pays }}";
+const apiKey = "d2264423e11b7ef493c9cdad67377afb";
+const query = encodeURIComponent(`${city},${country}`);
+
+fetch(`https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${apiKey}&units=metric&lang=fr`)
+.then(response => response.json())
+.then(data => {
+    if (data.cod === 200) {
+        weatherDiv.innerHTML = `
+            <div class="weather-card">
+                <i class="fas fa-thermometer-half"></i>
+                Température<br>${data.main.temp} °C
+            </div>
+            <div class="weather-card">
+                <i class="fas fa-tint"></i>
+                Humidité<br>${data.main.humidity} %
+            </div>
+            <div class="weather-card">
+                <i class="fas fa-wind"></i>
+                Vent<br>${data.wind.speed} m/s
+            </div>
+            <div class="weather-card">
+                <i class="fas fa-cloud"></i>
+                Conditions<br>${data.weather[0].description}
+            </div>
+        `;
+    } else {
+        weatherDiv.innerHTML = `<div class="weather-card" style="flex:1 1 100%; background:#888;">Météo non disponible</div>`;
+    }
+})
+.catch(() => {
+    weatherDiv.innerHTML = `<div class="weather-card" style="flex:1 1 100%; background:#888;">Erreur lors de la récupération</div>`;
+});
+</script>
+
+{% endblock %}

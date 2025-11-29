@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+  .offer-container {
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+    border-radius: 15px;
+    background: #ffffff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .offer-container:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  }
+
+  .offer-image {
+    width: 100%;
+    border-radius: 15px;
+    transition: transform 0.5s ease;
+  }
+
+  .offer-image:hover {
+    transform: scale(1.05);
+  }
+
+  .offer-title {
+    font-size: 2.2rem;
+    margin-top: 20px;
+    color: #047857;
+  }
+
+  .offer-description {
+    margin-top: 15px;
+    font-size: 1.15rem;
+    line-height: 1.6;
+    color: #444;
+  }
+
+  .offer-details {
+    margin-top: 25px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .detail-card {
+    flex: 1 1 200px;
+    padding: 15px;
+    background: #f0fdf4;
+    border-radius: 12px;
+    border-left: 5px solid #10b981;
+    transition: transform 0.3s ease, background 0.4s ease;
+  }
+
+  .detail-card:hover {
+    transform: translateY(-6px);
+    background: #dcfce7;
+  }
+
+  .btn-back {
+    display: inline-block;
+    margin-top: 30px;
+    padding: 12px 25px;
+    background: #047857;
+    color: #fff;
+    border-radius: 10px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  .btn-back:hover {
+    background: #10b981;
+    transform: translateY(-3px);
+  }
+</style>
+
+<div class="offer-container">
+
+  {% if offre.image %}
+  <img src="{{ offre.image.url }}" alt="{{ offre.titre }}" class="offer-image">
+  {% endif %}
+
+  <h1 class="offer-title">{{ offre.titre }}</h1>
+
+  <p class="offer-description">{{ offre.description }}</p>
+
+  <div class="offer-details">
+
+    <div class="detail-card">
+      <strong>Prix par personne :</strong> {{ offre.prix_par_personne }} TND
+    </div>
+
+    <div class="detail-card">
+      <strong>Destinations incluses :</strong>
+      <ul>
+        {% for d in offre.nom_destinations.all %}
+          <li>{{ d.nom_destination }} ({{ d.pays }})</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="detail-card">
+      <strong>Statut :</strong>
+      {% if offre.actif %}
+        Disponible
+      {% else %}
+        Indisponible
+      {% endif %}
+    </div>
+
+  </div>
+
+  <a href="{% url 'liste_offres' %}" class="btn-back">⬅ Retour aux offres</a>
+
+</div>
+
+{% endblock %}

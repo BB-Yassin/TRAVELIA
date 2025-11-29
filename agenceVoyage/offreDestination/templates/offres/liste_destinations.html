@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+  body {
+    background: linear-gradient(135deg, #dbeafe, #f0fdf4);
+  }
+
+  .page-title {
+    text-align: center;
+    margin-bottom: 40px;
+    font-size: 2.5rem;
+    color: #1e3a8a;
+    font-weight: bold;
+    animation: fadeInDown 0.8s ease;
+  }
+
+  .dest-grid {
+    max-width: 1200px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    padding: 20px;
+  }
+
+  .dest-card {
+    background: rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.4);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+    transition: transform .4s ease, box-shadow .4s ease;
+    cursor: pointer;
+  }
+
+  .dest-card:hover {
+    transform: translateY(-12px) scale(1.04);
+    box-shadow: 0 25px 45px rgba(0,0,0,0.25);
+  }
+
+  .dest-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    transition: transform .5s ease;
+  }
+
+  .dest-card:hover .dest-image {
+    transform: scale(1.18);
+  }
+
+  .dest-content {
+    padding: 18px;
+  }
+
+  .dest-name {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #1e3a8a;
+  }
+
+  .dest-pays {
+    font-size: 1.1rem;
+    color: #1e40af;
+  }
+
+  .view-btn {
+    display: block;
+    margin-top: 15px;
+    padding: 10px;
+    text-align: center;
+    background-color: #1e40af;
+    color: white;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background .3s ease, transform .3s ease;
+  }
+
+  .view-btn:hover {
+    background-color: #3b82f6;
+    transform: translateY(-4px);
+  }
+
+  @keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+</style>
+
+<h1 class="page-title">🌍 Découvrez nos Destinations</h1>
+
+<div class="dest-grid">
+  {% for d in destinations %}
+  <div class="dest-card" onclick="window.location='{% url 'destination_detail' d.pk %}'">
+
+    {% if d.image %}
+    <img src="{{ d.image.url }}" class="dest-image">
+    {% endif %}
+
+    <div class="dest-content">
+      <div class="dest-name"><center>{{ d.nom_destination }}</center></div>
+      <div class="dest-pays"> <center> {{ d.pays }} </center></div>
+
+      <a href="{% url 'destination_detail' d.pk %}" class="view-btn">Voir Détails ➜</a>
+    </div>
+
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}
