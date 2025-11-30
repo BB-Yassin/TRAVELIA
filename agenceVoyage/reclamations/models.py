@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
 
 
 class Reclamation(models.Model):
@@ -13,7 +14,7 @@ class Reclamation(models.Model):
     )
 
     reservation = models.ForeignKey(
-        'reservation.Reservation',   # Make sure app name is correct
+        'reservation.Reservation',   
         on_delete=models.CASCADE,
         related_name='reclamations',
         null=False,
@@ -39,7 +40,7 @@ class Reclamation(models.Model):
     )
     priorite = models.PositiveSmallIntegerField(
         choices=PRIORITY_CHOICES,
-        default=3
+        default=1
     )
 
     STATUS_CHOICES = (
@@ -55,6 +56,12 @@ class Reclamation(models.Model):
 
     date_creation = models.DateTimeField(auto_now_add=True)
     date_resolution = models.DateTimeField(null=True, blank=True)
+    
+    # SLA Fields
+    sla_deadline = models.DateTimeField(null=True, blank=True, verbose_name="Date limite (SLA)")
+    breach_flag = models.BooleanField(default=False, verbose_name="SLA dépassé ?")
+    
+    history = HistoricalRecords()
 
     def submitter_name(self):
         if self.client:
@@ -66,21 +73,45 @@ class Reclamation(models.Model):
         return f"Réclamation #{self.id} — {self.submitter_name()}"
 
     def save(self, *args, **kwargs):
-        # Object exists already → check status changes
+        # 1. Calculate SLA deadline if not set
+        if not self.sla_deadline:
+            # Low=72h, Medium=48h, High=24h
+            hours_map = {1: 72, 2: 48, 3: 24}
+            hours = hours_map.get(self.priorite, 48)
+            # If it's a new object, use current time, else use creation time if available
+            base_time = self.date_creation if self.date_creation else timezone.now()
+            self.sla_deadline = base_time + timezone.timedelta(hours=hours)
+
+        # 2. Check for SLA Breach
+        # If not resolved/closed and deadline passed
+        if self.status == 'en_progression' and self.sla_deadline:
+            if timezone.now() > self.sla_deadline:
+                self.breach_flag = True
+            else:
+                self.breach_flag = False
+        elif self.status in ('resolu', 'ferme'):
+            # If resolved, we might want to keep the flag if it WAS breached, 
+            # or check if it was resolved AFTER deadline.
+            # Here, let's check if resolution date > deadline
+            if self.date_resolution and self.sla_deadline and self.date_resolution > self.sla_deadline:
+                self.breach_flag = True
+            else:
+                # If resolved on time, clear flag? Or keep history? 
+                # Let's say if resolved on time, flag is False.
+                self.breach_flag = False
+
+        # 3. Handle Status Changes (existing logic)
         if self.pk:
-            old = Reclamation.objects.get(pk=self.pk)
-
-            # Status changed to resolved or closed
-            if self.status in ('resolu', 'ferme') and old.status != self.status:
-                if not self.date_resolution:
-                    self.date_resolution = timezone.now()
-
-            # Status changed back to « en progression »
-            if self.status == 'en_progression' and old.status != 'en_progression':
-                self.date_resolution = None
-
+            try:
+                old = Reclamation.objects.get(pk=self.pk)
+                if self.status in ('resolu', 'ferme') and old.status != self.status:
+                    if not self.date_resolution:
+                        self.date_resolution = timezone.now()
+                if self.status == 'en_progression' and old.status != 'en_progression':
+                    self.date_resolution = None
+            except Reclamation.DoesNotExist:
+                pass # Should not happen if pk exists
         else:
-            # New object created already resolved/closed → set resolution date now
             if self.status in ('resolu', 'ferme'):
                 self.date_resolution = timezone.now()
 
