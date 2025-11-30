@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+/* Container */
+.hebergements-container {
+    padding: 40px 20px;
+    background: #f8fafc;
+}
+
+/* Title */
+.hebergements-title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: bold;
+    margin-bottom: 40px;
+    color: #333;
+}
+
+/* Grid */
+.hebergements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 25px;
+}
+
+/* Card */
+.hebergement-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.hebergement-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0px 6px 16px rgba(0,0,0,0.15);
+}
+
+/* Image */
+.hebergement-img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+/* Card Content */
+.hebergement-info {
+    padding: 20px;
+}
+
+.hebergement-info h3 {
+    font-size: 22px;
+    margin-bottom: 8px;
+    color: #0077b6;
+}
+
+.hebergement-info p {
+    margin: 5px 0;
+    color: #555;
+    font-size: 15px;
+}
+
+/* Button */
+.btn-detail {
+    display: inline-block;
+    margin-top: 12px;
+    padding: 10px 18px;
+    background: #0077b6;
+    color: white;
+    border-radius: 10px;
+    transition: background .3s ease;
+}
+
+.btn-detail:hover {
+    background: #005f87;
+}
+</style>
+
+
+<div class="hebergements-container">
+
+    <h1 class="hebergements-title">Nos Hébergements</h1>
+
+    <div class="hebergements-grid">
+        {% for h in hebergements %}
+        <div class="hebergement-card">
+
+            {% if h.image %}
+            <img src="{{ h.image.url }}" class="hebergement-img">
+            {% else %}
+            <img src="{% static 'default.jpg' %}" class="hebergement-img">
+            {% endif %}
+
+            <div class="hebergement-info">
+                <h3>{{ h.nom_hebergement }}</h3>
+
+                <p><strong>Type :</strong> {{ h.get_type_hebergement_display }}</p>
+                <p><strong>Destination :</strong> {{ h.destination.nom_destination }}</p>
+                <p><strong>Prix par nuit :</strong> {{ h.prix_par_nuit }} TND</p>
+                <p><strong>Étoiles :</strong> ⭐ {{ h.etoiles }}</p>
+
+                <a href="{% url 'hebergement_detail' h.pk %}" class="btn-detail">Voir détails</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+{% endblock %}
