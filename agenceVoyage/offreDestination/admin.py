@@ -9,6 +9,8 @@ class DestinationAdmin(admin.ModelAdmin):
 class OffreAdmin(admin.ModelAdmin):
     list_display = ('titre', 'prix_par_personne', 'actif')
     list_filter = ('actif',)
+    search_fields = ('titre', 'destination',)
+
 
 @admin.register(Hebergement)
 class HebergementAdmin(admin.ModelAdmin):
