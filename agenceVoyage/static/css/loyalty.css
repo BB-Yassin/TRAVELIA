@@ -1,0 +1,231 @@
+/* Loyalty Program Styles */
+
+.loyalty-dashboard {
+    padding: 2rem 0;
+}
+
+.loyalty-hero {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 0.75rem;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.loyalty-hero h1 {
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.loyalty-hero p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+}
+
+/* Tier Showcase */
+.tier-showcase {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.tier-item {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tier-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+.tier-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.tier-name {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.tier-range {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-bottom: 1rem;
+}
+
+.tier-benefits {
+    font-size: 0.875rem;
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.tier-item.bronze { border-left: 4px solid #cd7f32; }
+.tier-item.silver { border-left: 4px solid #c0c0c0; }
+.tier-item.gold { border-left: 4px solid #ffd700; }
+.tier-item.platinum { border-left: 4px solid #e5e4e2; }
+
+/* Points Cards */
+.points-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.points-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.points-number {
+    font-size: 2.5rem;
+    font-weight: bold;
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+}
+
+.points-label {
+    font-size: 0.875rem;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Redemption Section */
+.redemption-section {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.redemption-section h3 {
+    margin-bottom: 1.5rem;
+}
+
+.redemption-form {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    align-items: end;
+}
+
+.redemption-form input {
+    padding: 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+
+.redemption-form button {
+    padding: 0.75rem 1.5rem;
+}
+
+/* Transactions History */
+.transactions-section {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.transactions-section h3 {
+    margin-bottom: 1.5rem;
+}
+
+.transactions-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.transactions-table th {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.transactions-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.transactions-table tr:hover {
+    background-color: #f8f9fa;
+}
+
+.transaction-type {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.transaction-type.earn {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.transaction-type.redeem {
+    background-color: #fff3cd;
+    color: #856404;
+}
+
+.transaction-type.bonus {
+    background-color: #d1ecf1;
+    color: #0c5460;
+}
+
+.transaction-type.expire {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.transaction-amount {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+.transaction-date {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .tier-showcase {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .points-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .redemption-form {
+        grid-template-columns: 1fr;
+    }
+    
+    .transactions-table {
+        font-size: 0.875rem;
+    }
+    
+    .transactions-table th,
+    .transactions-table td {
+        padding: 0.75rem 0.5rem;
+    }
+}

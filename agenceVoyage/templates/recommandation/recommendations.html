@@ -1,0 +1,639 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Personalized Recommendations - Travelia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/recommendations.scss' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container recommendations-container">
+    <div class="recommendations-header">
+        <h1>Your Personalized Recommendations</h1>
+        <p>Curated travel offers based on your preferences and loyalty tier</p>
+        <div class="recommendation-filters">
+            <button class="filter-btn active" data-filter="all">All Offers</button>
+            <button class="filter-btn" data-filter="destinations">Top Destinations</button>
+            <button class="filter-btn" data-filter="accommodations">Best Accommodations</button>
+        </div>
+    </div>
+    
+    <!-- Recommendations List -->
+    <div class="recommendations-grid" id="recommendations-section">
+        {% if recommendations %}
+            {% for rec in recommendations %}
+                <div class="recommendation-card" data-score="{{ rec.match_score }}">
+                    <div class="card-header">
+                        <span class="match-badge">{{ rec.match_score|floatformat:0 }}% Match</span>
+                        {% if rec.offer.hebergements.all %}
+                            <div class="accommodation-stars">
+                                {% for hebergement in rec.offer.hebergements.all|slice:":1" %}
+                                    {% for i in "x"|rjust:hebergement.etoiles %}⭐{% endfor %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="card-image">
+                        <img src="{{ rec.offer.image.url }}" alt="{{ rec.offer.titre }}">
+                        <span class="price-tag">€{{ rec.offer.prix_par_personne }}</span>
+                    </div>
+                    
+                    <div class="card-content">
+                        <h3>{{ rec.offer.titre }}</h3>
+                        <p class="description">{{ rec.offer.description|truncatewords:20 }}</p>
+                        
+                        <div class="destinations">
+                            {% for dest in rec.offer.nom_destinations.all|slice:":3" %}
+                                <span class="destination-tag">📍 {{ dest.nom_destination }}</span>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="recommendation-reason">
+                            <p><strong>Why recommended:</strong> {{ rec.reason }}</p>
+                        </div>
+                        
+                        <div class="score-breakdown">
+                            <div class="score-item">
+                                <span class="score-label">Preferences</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: {{ rec.preference_match }}%"></div>
+                                </div>
+                                <span class="score-value">{{ rec.preference_match|floatformat:0 }}%</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-label">Price Match</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: {{ rec.price_match }}%"></div>
+                                </div>
+                                <span class="score-value">{{ rec.price_match|floatformat:0 }}%</span>
+                            </div>
+                            {% if rec.tier_bonus > 0 %}
+                            <div class="score-item">
+                                <span class="score-label">Tier Bonus</span>
+                                <div class="score-bar">
+                                    <div class="score-fill" style="width: {{ rec.tier_bonus }}%"></div>
+                                </div>
+                                <span class="score-value">+{{ rec.tier_bonus|floatformat:0 }}%</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="card-actions">
+                            <button class="btn btn-primary btn-sm" onclick="viewOffer({{ rec.offer.id }})">View Offer</button>
+                            <button class="btn btn-outline btn-sm" onclick="toggleBookmark({{ rec.id }})">
+                                <span class="bookmark-icon">🔖</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="no-recommendations">
+                <div class="no-rec-icon">🎯</div>
+                <h3>No recommendations yet</h3>
+                <p>Complete your preferences to get personalized recommendations</p>
+                <a href="{% url 'preferences:edit_new' %}" class="btn btn-primary">Update Preferences</a>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Top Destinations Section -->
+    <div class="section destinations-section" id="destinations-section">
+        <h2>🌍 Top Destinations for You</h2>
+        <div class="destinations-grid">
+            {% for destination in top_destinations %}
+                <div class="destination-card">
+                    <div class="destination-image">
+                        <img src="{{ destination.image.url }}" alt="{{ destination.nom_destination }}">
+                        <div class="destination-overlay">
+                            <button class="btn btn-sm btn-primary">Explore</button>
+                        </div>
+                    </div>
+                    <div class="destination-info">
+                        <h4>{{ destination.nom_destination }}</h4>
+                        <p>{{ destination.pays }}</p>
+                        <p class="destination-desc">{{ destination.description|truncatewords:15 }}</p>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-center">No destinations available</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Best Accommodations Section -->
+    <div class="section accommodations-section" id="accommodations-section">
+        <h2>🏨 Best Accommodations for You</h2>
+        <div class="accommodations-grid">
+            {% for accommodation in best_accommodations %}
+                <div class="accommodation-card">
+                    <div class="accommodation-image">
+                        <img src="{{ accommodation.image.url }}" alt="{{ accommodation.nom_hebergement }}">
+                        <div class="stars-badge">
+                            {% for i in "x"|rjust:accommodation.etoiles %}⭐{% endfor %}
+                        </div>
+                    </div>
+                    <div class="accommodation-info">
+                        <h4>{{ accommodation.nom_hebergement }}</h4>
+                        <p class="accommodation-type">{{ accommodation.get_type_hebergement_display }}</p>
+                        <p class="accommodation-location">📍 {{ accommodation.destination.nom_destination }}</p>
+                        <div class="accommodation-price">
+                            <span class="price">€{{ accommodation.prix_par_nuit }}<span class="unit">/night</span></span>
+                        </div>
+                        <button class="btn btn-primary btn-sm btn-block">Book Now</button>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-center">No accommodations available</p>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Tier Benefits Info -->
+    <div class="tier-benefits-info">
+        <h2>Your Loyalty Tier Benefits</h2>
+        <div class="benefits-grid">
+            <div class="benefit-card">
+                <div class="benefit-icon">💎</div>
+                <h4>Higher Match Scores</h4>
+                <p>Premium members get priority placement and better recommendations</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon">🎁</div>
+                <h4>Bonus Points</h4>
+                <p>Earn up to 2x points per booking with our highest tier</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon">💰</div>
+                <h4>Exclusive Discounts</h4>
+                <p>Get special discounts on top-rated accommodations</p>
+            </div>
+            <div class="benefit-card">
+                <div class="benefit-icon">⚡</div>
+                <h4>Priority Support</h4>
+                <p>VIP members get 24/7 concierge support</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .recommendations-container {
+        padding: 2rem 0;
+    }
+    
+    .recommendations-header {
+        text-align: center;
+        margin-bottom: 3rem;
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        p {
+            font-size: 1.1rem;
+            color: var(--gray-600);
+            margin-bottom: 2rem;
+        }
+        
+        .recommendation-filters {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            
+            .filter-btn {
+                background: var(--gray-200);
+                border: 2px solid transparent;
+                padding: 0.75rem 1.5rem;
+                border-radius: var(--radius-full);
+                cursor: pointer;
+                font-weight: 500;
+                transition: all var(--transition-fast);
+                
+                &:hover {
+                    background: var(--gray-300);
+                }
+                
+                &.active {
+                    background: var(--primary);
+                    color: var(--white);
+                }
+            }
+        }
+    }
+    
+    .recommendations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+        
+        .recommendation-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            overflow: hidden;
+            transition: all var(--transition-base);
+            display: flex;
+            flex-direction: column;
+            
+            &:hover {
+                box-shadow: var(--shadow-lg);
+                transform: translateY(-5px);
+            }
+            
+            .card-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 1rem;
+                background: var(--primary-light);
+                border-bottom: 2px solid var(--primary);
+                
+                .match-badge {
+                    background: var(--primary);
+                    color: var(--white);
+                    padding: 0.25rem 0.75rem;
+                    border-radius: var(--radius-full);
+                    font-weight: 600;
+                    font-size: 0.85rem;
+                }
+                
+                .accommodation-stars {
+                    font-size: 0.9rem;
+                }
+            }
+            
+            .card-image {
+                position: relative;
+                height: 200px;
+                overflow: hidden;
+                background: var(--gray-200);
+                
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    transition: transform var(--transition-base);
+                }
+                
+                &:hover img {
+                    transform: scale(1.05);
+                }
+                
+                .price-tag {
+                    position: absolute;
+                    bottom: 1rem;
+                    right: 1rem;
+                    background: var(--primary);
+                    color: var(--white);
+                    padding: 0.5rem 1rem;
+                    border-radius: var(--radius-md);
+                    font-weight: 600;
+                    font-size: 1.1rem;
+                }
+            }
+            
+            .card-content {
+                padding: 1.5rem;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                
+                h3 {
+                    margin-bottom: 0.75rem;
+                    color: var(--gray-900);
+                }
+                
+                .description {
+                    color: var(--gray-600);
+                    font-size: 0.95rem;
+                    margin-bottom: 1rem;
+                    flex: 1;
+                }
+                
+                .destinations {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.5rem;
+                    margin-bottom: 1rem;
+                    
+                    .destination-tag {
+                        background: #e7f1ff;
+                        color: var(--primary);
+                        padding: 0.25rem 0.75rem;
+                        border-radius: var(--radius-full);
+                        font-size: 0.85rem;
+                    }
+                }
+                
+                .recommendation-reason {
+                    background: var(--gray-50);
+                    padding: 1rem;
+                    border-radius: var(--radius-md);
+                    margin-bottom: 1rem;
+                    border-left: 4px solid var(--primary);
+                    
+                    p {
+                        margin-bottom: 0;
+                        font-size: 0.9rem;
+                    }
+                }
+                
+                .score-breakdown {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.75rem;
+                    margin-bottom: 1rem;
+                    
+                    .score-item {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.75rem;
+                        font-size: 0.85rem;
+                        
+                        .score-label {
+                            min-width: 80px;
+                            color: var(--gray-600);
+                        }
+                        
+                        .score-bar {
+                            flex: 1;
+                            height: 6px;
+                            background: var(--gray-200);
+                            border-radius: var(--radius-full);
+                            overflow: hidden;
+                            
+                            .score-fill {
+                                height: 100%;
+                                background: linear-gradient(90deg, #007bff 0%, #0056b3 100%);
+                            }
+                        }
+                        
+                        .score-value {
+                            min-width: 40px;
+                            text-align: right;
+                            color: var(--primary);
+                            font-weight: 600;
+                        }
+                    }
+                }
+                
+                .card-actions {
+                    display: flex;
+                    gap: 0.75rem;
+                    
+                    .btn {
+                        flex: 1;
+                    }
+                    
+                    .btn-outline {
+                        padding: 0.5rem;
+                        flex: 0 0 auto;
+                    }
+                }
+            }
+        }
+    }
+    
+    .no-recommendations {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 3rem 1rem;
+        
+        .no-rec-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        
+        h3 {
+            margin-bottom: 0.5rem;
+        }
+        
+        p {
+            margin-bottom: 1.5rem;
+            color: var(--gray-600);
+        }
+    }
+    
+    .section {
+        margin-bottom: 3rem;
+        
+        h2 {
+            margin-bottom: 2rem;
+            font-size: 1.75rem;
+        }
+    }
+    
+    .destinations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        
+        .destination-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+            
+            &:hover {
+                transform: translateY(-5px);
+                box-shadow: var(--shadow-lg);
+            }
+            
+            .destination-image {
+                position: relative;
+                height: 180px;
+                overflow: hidden;
+                
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+                
+                .destination-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                    transition: opacity var(--transition-base);
+                }
+                
+                &:hover .destination-overlay {
+                    opacity: 1;
+                }
+            }
+            
+            .destination-info {
+                padding: 1rem;
+                
+                h4 {
+                    margin-bottom: 0.25rem;
+                }
+                
+                p {
+                    margin-bottom: 0.5rem;
+                    font-size: 0.9rem;
+                }
+                
+                .destination-desc {
+                    color: var(--gray-600);
+                    font-size: 0.85rem;
+                }
+            }
+        }
+    }
+    
+    .accommodations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        
+        .accommodation-card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+            display: flex;
+            flex-direction: column;
+            
+            &:hover {
+                transform: translateY(-5px);
+                box-shadow: var(--shadow-lg);
+            }
+            
+            .accommodation-image {
+                position: relative;
+                height: 200px;
+                overflow: hidden;
+                background: var(--gray-200);
+                
+                img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                }
+                
+                .stars-badge {
+                    position: absolute;
+                    top: 1rem;
+                    right: 1rem;
+                    background: var(--primary);
+                    color: var(--white);
+                    padding: 0.5rem 0.75rem;
+                    border-radius: var(--radius-md);
+                }
+            }
+            
+            .accommodation-info {
+                padding: 1.5rem;
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                
+                h4 {
+                    margin-bottom: 0.25rem;
+                }
+                
+                .accommodation-type {
+                    color: var(--gray-600);
+                    font-size: 0.9rem;
+                    margin-bottom: 0.5rem;
+                }
+                
+                .accommodation-location {
+                    color: var(--gray-700);
+                    font-size: 0.9rem;
+                    margin-bottom: 1rem;
+                }
+                
+                .accommodation-price {
+                    margin-bottom: 1rem;
+                    
+                    .price {
+                        font-size: 1.5rem;
+                        font-weight: 600;
+                        color: var(--primary);
+                        
+                        .unit {
+                            font-size: 0.85rem;
+                            color: var(--gray-600);
+                        }
+                    }
+                }
+                
+                .btn {
+                    width: 100%;
+                }
+            }
+        }
+    }
+    
+    .tier-benefits-info {
+        background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+        padding: 3rem;
+        border-radius: var(--radius-lg);
+        border: 2px solid var(--gray-200);
+        
+        h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .benefits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            
+            .benefit-card {
+                text-align: center;
+                
+                .benefit-icon {
+                    font-size: 2.5rem;
+                    margin-bottom: 1rem;
+                }
+                
+                h4 {
+                    margin-bottom: 0.75rem;
+                }
+                
+                p {
+                    color: var(--gray-600);
+                    font-size: 0.95rem;
+                }
+            }
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .recommendations-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .destinations-grid,
+        .accommodations-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function viewOffer(offerId) {
+        window.location.href = `/offers/${offerId}/`;
+    }
+    
+    function toggleBookmark(recId) {
+        alert('Bookmark functionality coming soon!');
+    }
+</script>
+{% endblock %}

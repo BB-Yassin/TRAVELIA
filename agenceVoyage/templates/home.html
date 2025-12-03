@@ -1,0 +1,211 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Home - Travelia{% endblock %}
+
+{% block content %}
+<div class="container hero">
+    <div class="hero-content">
+        <h1>Welcome to Travelia</h1>
+        <p>Discover amazing travel destinations and exclusive offers</p>
+        {% if not user.is_authenticated %}
+            <button class="btn btn-primary btn-lg" onclick="openAuthModal()">Get Started</button>
+        {% else %}
+            <p class="hero-subtitle">Welcome back, {{ user.first_name }}!</p>
+            <div class="hero-buttons">
+                <a href="{% url 'offreDestination:offers-list' %}" class="btn btn-primary">Browse Offers</a>
+                <a href="{% url 'recommandation:recommendations' %}" class="btn btn-outline">See Recommendations</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container featured-section">
+    <h2>Featured Offers</h2>
+    <div class="offers-grid">
+        <!-- Offers will be loaded here -->
+        <div class="offer-card">
+            <div class="offer-image" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"></div>
+            <div class="offer-content">
+                <h3>Paris Package</h3>
+                <p>Experience the City of Light</p>
+                <span class="price">€1,299</span>
+            </div>
+        </div>
+        <div class="offer-card">
+            <div class="offer-image" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"></div>
+            <div class="offer-content">
+                <h3>Rome Experience</h3>
+                <p>Explore the Eternal City</p>
+                <span class="price">€1,199</span>
+            </div>
+        </div>
+        <div class="offer-card">
+            <div class="offer-image" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"></div>
+            <div class="offer-content">
+                <h3>Barcelona Adventure</h3>
+                <p>Discover Mediterranean beauty</p>
+                <span class="price">€999</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.is_authenticated %}
+<div class="container loyalty-section">
+    <h2>Your Loyalty Status</h2>
+    <div class="loyalty-card">
+        <div class="loyalty-header">
+            <h3>{{ loyalty.tier|default:"BRONZE" }} Member</h3>
+            <span class="points-badge">{{ loyalty.points|default:"0" }} Points</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" style="width: {% widthratio loyalty.points 100000 100 %}%"></div>
+        </div>
+        <p>You're {{ loyalty.points|default:"0" }} points away from the next tier!</p>
+    </div>
+</div>
+{% endif %}
+
+<style>
+    .hero {
+        padding: 6rem 2rem;
+        text-align: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 12px;
+        margin: 2rem 0;
+    }
+
+    .hero h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .hero p {
+        font-size: 1.25rem;
+        margin-bottom: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .hero-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .btn-lg {
+        padding: 1rem 2rem;
+        font-size: 1.1rem;
+    }
+
+    .featured-section {
+        margin: 4rem 0;
+    }
+
+    .featured-section h2 {
+        font-size: 2rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .offers-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .offer-card {
+        background: white;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .offer-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    .offer-image {
+        height: 200px;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .offer-content {
+        padding: 1.5rem;
+    }
+
+    .offer-content h3 {
+        margin-bottom: 0.5rem;
+    }
+
+    .price {
+        display: block;
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #667eea;
+        margin-top: 1rem;
+    }
+
+    .loyalty-section {
+        margin: 4rem 0;
+    }
+
+    .loyalty-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 12px;
+    }
+
+    .loyalty-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .points-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: bold;
+    }
+
+    .progress-bar {
+        height: 10px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: #ffd700;
+        transition: width 0.3s;
+    }
+
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2rem;
+        }
+
+        .hero p {
+            font-size: 1rem;
+        }
+
+        .offers-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

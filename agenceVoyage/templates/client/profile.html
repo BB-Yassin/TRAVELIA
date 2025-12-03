@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - Travelia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container profile-container">
+    <div class="profile-header">
+        <div class="profile-cover"></div>
+        <div class="profile-info">
+            <div class="profile-avatar">
+                <span class="avatar-initial">{{ user.first_name|first|upper }}</span>
+            </div>
+            <div class="profile-details">
+                <h1>{{ user.first_name }} {{ user.last_name }}</h1>
+                <p class="email">{{ user.email }}</p>
+                <div class="profile-stats">
+                    <div class="stat">
+                        <span class="stat-value">{{ loyalty.totalEarnedPoints|default:"0" }}</span>
+                        <span class="stat-label">Total Points</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">{{ loyalty.points|default:"0" }}</span>
+                        <span class="stat-label">Available Points</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value tier-badge">{{ loyalty.tier|default:"BRONZE" }}</span>
+                        <span class="stat-label">Tier Status</span>
+                    </div>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="btn btn-primary" onclick="editProfile()">Edit Profile</button>
+                <button class="btn btn-outline" onclick="changePassword()">Change Password</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="profile-content">
+        <!-- Tabs Navigation -->
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="preferences">
+                <span class="icon">⚙️</span> Preferences
+            </button>
+            <button class="tab-btn" data-tab="loyalty">
+                <span class="icon">🎁</span> Loyalty Program
+            </button>
+            <button class="tab-btn" data-tab="bookings">
+                <span class="icon">📅</span> My Bookings
+            </button>
+            <button class="tab-btn" data-tab="settings">
+                <span class="icon">🔧</span> Settings
+            </button>
+        </div>
+        
+        <!-- Preferences Tab -->
+        <div class="tab-content active" id="preferences-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Travel Preferences</h3>
+                    <button class="btn btn-sm btn-primary" onclick="editPreferences()">Edit</button>
+                </div>
+                <div class="card-body">
+                    <div class="preferences-grid">
+                        <div class="pref-item">
+                            <span class="pref-label">Travel Class</span>
+                            <span class="pref-value">{{ preference.travel_class|default:"Not set" }}</span>
+                        </div>
+                        <div class="pref-item">
+                            <span class="pref-label">Meal Preference</span>
+                            <span class="pref-value">{{ preference.meal_preference|default:"Not set" }}</span>
+                        </div>
+                        <div class="pref-item">
+                            <span class="pref-label">Seat Preference</span>
+                            <span class="pref-value">{{ preference.seat_preference|default:"Not set" }}</span>
+                        </div>
+                        <div class="pref-item">
+                            <span class="pref-label">Price Range</span>
+                            <span class="pref-value">{{ preference.price_range|default:"Not set" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loyalty Tab -->
+        <div class="tab-content" id="loyalty-tab">
+            <div class="loyalty-overview">
+                <div class="card tier-card">
+                    <div class="card-body text-center">
+                        <div class="tier-icon">👑</div>
+                        <h3>{{ loyalty.tier|default:"BRONZE" }} Member</h3>
+                        <p class="tier-description">
+                            {% if loyalty.tier == "BRONZE" %}
+                                Start your journey with us. Earn points on every booking.
+                            {% elif loyalty.tier == "SILVER" %}
+                                Enjoy 5% discount on all bookings!
+                            {% elif loyalty.tier == "GOLD" %}
+                                Premium member with 10% discount and priority support.
+                            {% elif loyalty.tier == "PLATINUM" %}
+                                VIP member with exclusive perks and special offers.
+                            {% endif %}
+                        </p>
+                        <div class="loyalty-progress">
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 45%"></div>
+                            </div>
+                            <p class="progress-text">
+                                {{ loyalty.totalEarnedPoints|default:"0" }} / 
+                                {% if loyalty.tier == "BRONZE" %}20,000{% elif loyalty.tier == "SILVER" %}50,000{% elif loyalty.tier == "GOLD" %}100,000{% else %}100,000+{% endif %} points
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row cols-3">
+                    <div class="card points-card">
+                        <div class="card-body text-center">
+                            <div class="points-icon">⭐</div>
+                            <p class="points-label">Available Points</p>
+                            <p class="points-value">{{ loyalty.points|default:"0" }}</p>
+                            <button class="btn btn-sm btn-primary" onclick="redeemPoints()">Redeem</button>
+                        </div>
+                    </div>
+                    
+                    <div class="card points-card">
+                        <div class="card-body text-center">
+                            <div class="points-icon">📊</div>
+                            <p class="points-label">Total Earned</p>
+                            <p class="points-value">{{ loyalty.totalEarnedPoints|default:"0" }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="card points-card">
+                        <div class="card-body text-center">
+                            <div class="points-icon">✓</div>
+                            <p class="points-label">Redeemed</p>
+                            <p class="points-value">{{ loyalty.totalRedeemedPoints|default:"0" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card mt">
+                <div class="card-header">
+                    <h3>Recent Transactions</h3>
+                </div>
+                <div class="card-body">
+                    {% if transactions %}
+                        <div class="transactions-list">
+                            {% for transaction in transactions %}
+                                <div class="transaction-item">
+                                    <div class="transaction-info">
+                                        <span class="transaction-type">{{ transaction.get_transaction_type_display }}</span>
+                                        <span class="transaction-description">{{ transaction.description }}</span>
+                                    </div>
+                                    <div class="transaction-points">+{{ transaction.points_amount }}</div>
+                                    <span class="transaction-date">{{ transaction.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">No transactions yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bookings Tab -->
+        <div class="tab-content" id="bookings-tab">
+            <div class="card">
+                <div class="card-header">
+                    <h3>My Bookings</h3>
+                </div>
+                <div class="card-body">
+                    {% if bookings %}
+                        <div class="bookings-list">
+                            {% for booking in bookings %}
+                                <div class="booking-item">
+                                    <div class="booking-header">
+                                        <h4>{{ booking.offre.titre }}</h4>
+                                        <span class="booking-status status-{{ booking.statut }}">{{ booking.get_statut_display }}</span>
+                                    </div>
+                                    <p class="booking-date">
+                                        <strong>Booking Date:</strong> {{ booking.date_reservation|date:"M d, Y" }}
+                                    </p>
+                                    <p class="booking-price">
+                                        <strong>Total Price:</strong> €{{ booking.prix_total }}
+                                    </p>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <p class="text-center text-muted">No bookings yet. Start exploring!</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settings-tab">
+            <div class="settings-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Notifications</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="setting-item">
+                            <label class="checkbox">
+                                <input type="checkbox" checked>
+                                <span>Email promotions and special offers</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox">
+                                <input type="checkbox" checked>
+                                <span>Booking confirmations</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="checkbox">
+                                <input type="checkbox">
+                                <span>Loyalty program updates</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Account Security</h3>
+                    </div>
+                    <div class="card-body">
+                        <p>Password last changed: <strong>3 months ago</strong></p>
+                        <button class="btn btn-outline">Change Password</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.getAttribute('data-tab');
+            
+            // Remove active from all tabs and contents
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // Add active to clicked tab and corresponding content
+            this.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.add('active');
+        });
+    });
+    
+    function editProfile() {
+        alert('Edit profile functionality coming soon!');
+    }
+    
+    function changePassword() {
+        alert('Change password functionality coming soon!');
+    }
+    
+    function editPreferences() {
+        window.location.href = '{% url "preferences:edit_new" %}';
+    }
+    
+    function redeemPoints() {
+        window.location.href = '{% url "programmeFidilite:redeem_points" %}';
+    }
+</script>
+{% endblock %}

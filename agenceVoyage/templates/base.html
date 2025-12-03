@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% load static %}
+    <title>{% block title %}Travelia - Travel Agency{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <h1>Travelia</h1>
+            </div>
+            <div class="navbar-menu">
+                <ul class="navbar-items">
+                    <li><a href="{% url 'home' %}">Home</a></li>
+                    <li><a href="{% url 'offreDestination:offers-list' %}">Offers</a></li>
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'client:profile' %}">Profile</a></li>
+                        <li><a href="{% url 'programmeFidilite:loyalty_dashboard' %}">Loyalty</a></li>
+                        <li><a href="{% url 'recommandation:recommendations' %}">Recommendations</a></li>
+                        <li><a href="{% url 'client:logout' %}">Logout</a></li>
+                    {% else %}
+                        <li><button class="btn btn-primary" onclick="openAuthModal()">Sign In / Sign Up</button></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Messages -->
+    {% if messages %}
+        <div class="messages-container">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible">
+                    {{ message }}
+                    <button type="button" class="alert-close" onclick="this.parentElement.style.display='none';">&times;</button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Auth Modal -->
+    {% include 'components/auth_modal.html' %}
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Travelia. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Auth Modal Functions
+        function openAuthModal() {
+            document.getElementById('auth-modal').classList.add('active');
+        }
+
+        function closeAuthModal() {
+            document.getElementById('auth-modal').classList.remove('active');
+        }
+
+        function showLogin() {
+            document.getElementById('login-form').classList.add('auth-form-active');
+            document.getElementById('signup-form').classList.remove('auth-form-active');
+        }
+
+        function showSignup() {
+            document.getElementById('signup-form').classList.add('auth-form-active');
+            document.getElementById('login-form').classList.remove('auth-form-active');
+        }
+
+        // Close modal when clicking X
+        document.querySelector('.close-modal').addEventListener('click', closeAuthModal);
+
+        // Close modal when clicking outside
+        document.getElementById('auth-modal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeAuthModal();
+            }
+        });
+
+        // Check URL hash for form display
+        window.addEventListener('load', function() {
+            if (window.location.hash === '#login') {
+                openAuthModal();
+                showLogin();
+            } else if (window.location.hash === '#signup') {
+                openAuthModal();
+                showSignup();
+            }
+        });
+
+        // Tab functionality for profile
+        document.querySelectorAll('.tab-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                const tabName = this.getAttribute('data-tab');
+                
+                // Remove active class from all tabs
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                
+                // Add active class to clicked tab
+                this.classList.add('active');
+                document.getElementById(tabName + '-tab').classList.add('active');
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
