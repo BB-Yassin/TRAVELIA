@@ -1,0 +1,466 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Points History - Travelia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/loyalty.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container loyalty-container">
+    <div class="loyalty-hero">
+        <div class="hero-content">
+            <h1>Points History</h1>
+            <p>View all your loyalty points transactions</p>
+        </div>
+        <div class="hero-badge">
+            <span class="tier-badge tier-{{ loyalty.tier|lower }}">{{ loyalty.tier }}</span>
+        </div>
+    </div>
+
+    <div class="history-section">
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-content">
+                    <h3>Total Earned</h3>
+                    <p class="stat-value">{{ stats.total_earned }}</p>
+                    <small>All-time points earned</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🎁</div>
+                <div class="stat-content">
+                    <h3>Total Redeemed</h3>
+                    <p class="stat-value">{{ stats.total_redeemed }}</p>
+                    <small>Points used for discounts</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⏰</div>
+                <div class="stat-content">
+                    <h3>Total Expired</h3>
+                    <p class="stat-value">{{ stats.total_expired }}</p>
+                    <small>Points that expired</small>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h3>Available</h3>
+                    <p class="stat-value">{{ loyalty.points }}</p>
+                    <small>Ready to redeem</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="transactions-section">
+            <div class="section-header">
+                <h2>Transaction History</h2>
+                <div class="section-actions">
+                    <a href="?export=csv" class="btn btn-sm btn-outline">📥 Export CSV</a>
+                </div>
+            </div>
+
+            <!-- Filter Buttons -->
+            <div class="filter-section">
+                <a href="?type=" class="filter-btn {% if not selected_type %}active{% endif %}">All</a>
+                <a href="?type=earn" class="filter-btn {% if selected_type == 'earn' %}active{% endif %}">📈 Earned</a>
+                <a href="?type=redeem" class="filter-btn {% if selected_type == 'redeem' %}active{% endif %}">🎁 Redeemed</a>
+                <a href="?type=expire" class="filter-btn {% if selected_type == 'expire' %}active{% endif %}">⏰ Expired</a>
+            </div>
+            
+            {% if transactions %}
+                <div class="transactions-table-wrapper">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Points</th>
+                                <th>Description</th>
+                                <th>Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                                <tr class="transaction-row transaction-{{ transaction.transaction_type|lower }}">
+                                    <td class="date">
+                                        <span class="date-display">{{ transaction.created_at|date:"M d, Y" }}</span>
+                                        <span class="time-display">{{ transaction.created_at|time:"H:i" }}</span>
+                                    </td>
+                                    <td class="type">
+                                        <span class="badge badge-{{ transaction.transaction_type|lower }}">
+                                            {% if transaction.transaction_type == 'earn' %}
+                                                📈 Earned
+                                            {% elif transaction.transaction_type == 'redeem' %}
+                                                🎁 Redeemed
+                                            {% elif transaction.transaction_type == 'expire' %}
+                                                ⏰ Expired
+                                            {% else %}
+                                                {{ transaction.transaction_type|title }}
+                                            {% endif %}
+                                        </span>
+                                    </td>
+                                    <td class="points">
+                                        <span class="points-value {% if transaction.transaction_type == 'earn' %}positive{% else %}negative{% endif %}">
+                                            {% if transaction.transaction_type == 'earn' %}+{% else %}-{% endif %}{{ transaction.points_amount }}
+                                        </span>
+                                    </td>
+                                    <td class="description">
+                                        {{ transaction.description }}
+                                    </td>
+                                    <td class="balance">
+                                        {{ transaction.balance_after }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="no-transactions">
+                    <div class="empty-icon">📭</div>
+                    <h3>No transactions yet</h3>
+                    <p>Start making bookings to earn points!</p>
+                    <a href="{% url 'home' %}" class="btn btn-primary">Browse Offers</a>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Navigation -->
+        <div class="action-buttons">
+            <a href="{% url 'programmeFidilite:loyalty_dashboard' %}" class="btn btn-outline">Back to Dashboard</a>
+            <a href="{% url 'programmeFidilite:redeem_points' %}" class="btn btn-primary">Redeem Points</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .history-section {
+        padding: 2rem 0;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .section-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .section-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .filter-section {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        padding: 0.6rem 1.2rem;
+        border: 2px solid #e0e0e0;
+        border-radius: 20px;
+        background: white;
+        color: #666;
+        text-decoration: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    .filter-btn:hover {
+        border-color: var(--primary);
+        color: var(--primary);
+    }
+
+    .filter-btn.active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary);
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: white;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        display: flex;
+        gap: 1.5rem;
+        align-items: flex-start;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        flex-shrink: 0;
+    }
+
+    .stat-content h3 {
+        margin: 0 0 0.5rem 0;
+        font-size: 0.9rem;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin: 0.5rem 0;
+    }
+
+    .stat-content small {
+        color: #999;
+        font-size: 0.85rem;
+    }
+
+    .transactions-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+    }
+
+    .transactions-section h2 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        font-size: 1.5rem;
+    }
+
+    .transactions-table-wrapper {
+        overflow-x: auto;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .transactions-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+    }
+
+    .transactions-table thead {
+        background: #f8f9fa;
+        border-bottom: 2px solid #e0e0e0;
+    }
+
+    .transactions-table th {
+        padding: 1rem;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .transactions-table td {
+        padding: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .transaction-row:hover {
+        background: #f8f9fa;
+    }
+
+    .transaction-row.transaction-earn {
+        --highlight: rgba(76, 175, 80, 0.05);
+    }
+
+    .transaction-row.transaction-redeem {
+        --highlight: rgba(255, 152, 0, 0.05);
+    }
+
+    .transaction-row.transaction-expire {
+        --highlight: rgba(244, 67, 54, 0.05);
+    }
+
+    .transaction-row:hover {
+        background: var(--highlight, #f8f9fa);
+    }
+
+    .date {
+        white-space: nowrap;
+    }
+
+    .date-display {
+        display: block;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .time-display {
+        display: block;
+        font-size: 0.85rem;
+        color: #999;
+    }
+
+    .badge {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .badge-earn {
+        background: rgba(76, 175, 80, 0.15);
+        color: #4caf50;
+    }
+
+    .badge-redeem {
+        background: rgba(255, 152, 0, 0.15);
+        color: #ff9800;
+    }
+
+    .badge-expire {
+        background: rgba(244, 67, 54, 0.15);
+        color: #f44336;
+    }
+
+    .points-value {
+        font-weight: 700;
+        font-size: 1.05rem;
+    }
+
+    .points-value.positive {
+        color: #4caf50;
+    }
+
+    .points-value.negative {
+        color: #f44336;
+    }
+
+    .description {
+        color: #666;
+        font-size: 0.9rem;
+        max-width: 300px;
+    }
+
+    .balance {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .no-transactions {
+        text-align: center;
+        padding: 3rem 2rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+    }
+
+    .no-transactions h3 {
+        margin: 1rem 0 0.5rem 0;
+        font-size: 1.3rem;
+    }
+
+    .no-transactions p {
+        color: #666;
+        margin-bottom: 1.5rem;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .action-buttons .btn {
+        min-width: 150px;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-card {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .transactions-section {
+            padding: 1rem;
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .description {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            min-width: 100px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .transactions-table {
+            font-size: 0.8rem;
+        }
+
+        .transactions-table th,
+        .transactions-table td {
+            padding: 0.5rem;
+        }
+
+        .badge {
+            padding: 0.3rem 0.6rem;
+            font-size: 0.75rem;
+        }
+    }
+</style>
+{% endblock %}
