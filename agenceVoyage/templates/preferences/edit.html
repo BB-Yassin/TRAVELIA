@@ -16,7 +16,7 @@
     
     <div class="preferences-form-wrapper">
         <div class="form-card">
-            <form method="POST" action="{% url 'preferences_save' %}" class="preferences-form">
+            <form method="POST" action="{% url 'preferences:save' %}" class="preferences-form">
                 {% csrf_token %}
                 
                 <div class="form-section">
@@ -90,7 +90,7 @@
                 
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary btn-lg">Save Preferences</button>
-                    <a href="{% url 'profile' %}" class="btn btn-outline btn-lg">Cancel</a>
+                    <a href="{% url 'client:profile' %}" class="btn btn-outline btn-lg">Cancel</a>
                 </div>
             </form>
         </div>

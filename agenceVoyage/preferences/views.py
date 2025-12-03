@@ -139,7 +139,7 @@ def preferences_edit(request):
         preference.save()
         
         messages.success(request, "Preferences updated successfully!")
-        return redirect('profile')
+        return redirect('client:profile')
     
     from recommandation.views import RecommendationEngine
     engine = RecommendationEngine(request.user)
