@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.http import require_http_methods
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.db.models import Sum
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
@@ -13,6 +13,8 @@ from .serializers import (
     PointsTransactionSerializer,
     FidelityTierConfigSerializer
 )
+import csv
+from datetime import datetime
 
 
 @login_required
@@ -79,22 +81,57 @@ def loyalty_dashboard(request):
 def loyalty_points_history(request):
     """Historique des transactions de points"""
     loyalty = get_object_or_404(LoyaltyProgram, user=request.user)
-    transactions = loyalty.transactions.all()[:50]  # Dernières 50 transactions
     
-    # Statistiques
+    # Get all transactions (filter before slicing)
+    all_transactions = loyalty.transactions.all()
+    
+    # Filter by transaction type if provided
+    transaction_type = request.GET.get('type', '')
+    if transaction_type and transaction_type in ['earn', 'redeem', 'expire', 'bonus']:
+        all_transactions = all_transactions.filter(transaction_type=transaction_type)
+    
+    # Check if export is requested
+    if request.GET.get('export') == 'csv':
+        return export_transactions_csv(request, all_transactions)
+    
+    # Statistiques (calculate before slicing)
     stats = {
-        'total_earned': transactions.filter(transaction_type='earn').aggregate(Sum('points_amount'))['points_amount__sum'] or 0,
-        'total_redeemed': transactions.filter(transaction_type='redeem').aggregate(Sum('points_amount'))['points_amount__sum'] or 0,
-        'total_expired': transactions.filter(transaction_type='expire').aggregate(Sum('points_amount'))['points_amount__sum'] or 0,
+        'total_earned': loyalty.transactions.filter(transaction_type='earn').aggregate(Sum('points_amount'))['points_amount__sum'] or 0,
+        'total_redeemed': loyalty.transactions.filter(transaction_type='redeem').aggregate(Sum('points_amount'))['points_amount__sum'] or 0,
+        'total_expired': loyalty.transactions.filter(transaction_type='expire').aggregate(Sum('points_amount'))['points_amount__sum'] or 0,
     }
+    
+    # Now slice the transactions (last 50)
+    transactions = all_transactions[:50]
     
     context = {
         'loyalty': loyalty,
         'transactions': transactions,
         'stats': stats,
+        'selected_type': transaction_type,
     }
     
     return render(request, 'programmeFidilite/points_history.html', context)
+
+
+def export_transactions_csv(request, transactions):
+    """Export transactions to CSV file"""
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = f'attachment; filename="loyalty_transactions_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv"'
+    
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Time', 'Type', 'Points', 'Description'])
+    
+    for transaction in transactions:
+        writer.writerow([
+            transaction.created_at.strftime('%Y-%m-%d'),
+            transaction.created_at.strftime('%H:%M:%S'),
+            transaction.get_transaction_type_display(),
+            transaction.points_amount,
+            transaction.description,
+        ])
+    
+    return response
 
 
 @login_required
