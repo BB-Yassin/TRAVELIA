@@ -119,6 +119,39 @@ def preference_edit(request):
         messages.error(request, "An error occurred while editing preferences.")
         return redirect('home')
 
+
+def preferences_edit(request):
+    """Edit user preferences - new template version"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    try:
+        preference, created = Preference.objects.get_or_create(user=request.user)
+    except:
+        preference = None
+    
+    if request.method == 'POST':
+        preference.travel_class = request.POST.get('travel_class', preference.travel_class if preference else 'ECONOMY')
+        preference.meal_preference = request.POST.get('meal_preference', preference.meal_preference if preference else 'NON_VEGETARIAN')
+        preference.seat_preference = request.POST.get('seat_preference', preference.seat_preference if preference else 'AISLE')
+        preference.price_range = request.POST.get('price_range', preference.price_range if preference else 'STANDARD')
+        preference.user = request.user
+        preference.save()
+        
+        messages.success(request, "Preferences updated successfully!")
+        return redirect('client:profile')
+    
+    from recommandation.views import RecommendationEngine
+    engine = RecommendationEngine(request.user)
+    recommendations = engine.generate_recommendations(limit=5)
+    
+    context = {
+        'preference': preference,
+        'recommendations': recommendations,
+    }
+    
+    return render(request, 'preferences/edit.html', context)
+
 @login_required_modal
 def preference_delete(request):
     """Delete user preferences"""

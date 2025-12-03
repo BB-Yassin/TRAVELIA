@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Loyalty Dashboard - Travelia{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/loyalty.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="container loyalty-container">
+    <div class="loyalty-hero">
+        <div class="hero-content">
+            <h1>Loyalty Program</h1>
+            <p>Earn points on every booking and unlock exclusive benefits</p>
+        </div>
+        <div class="hero-badge">
+            <span class="tier-badge tier-{{ loyalty.tier|lower }}">{{ loyalty.tier }}</span>
+        </div>
+    </div>
+    
+    <!-- Tier Information -->
+    <div class="tier-showcase">
+        <div class="tier-current">
+            <h3>Your Current Tier</h3>
+            <div class="tier-info">
+                <div class="tier-display">
+                    <span class="tier-name">{{ loyalty.tier }}</span>
+                    <span class="tier-emoji">
+                        {% if loyalty.tier == "BRONZE" %}👑{% elif loyalty.tier == "SILVER" %}✨{% elif loyalty.tier == "GOLD" %}💎{% elif loyalty.tier == "PLATINUM" %}👑✨{% endif %}
+                    </span>
+                </div>
+                <div class="tier-progress">
+                    <div class="progress-label">
+                        <span>Progress to Next Tier</span>
+                        <span class="progress-percent">{{ progression.percentage }}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: {{ progression.percentage }}%"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span>{{ loyalty.totalEarnedPoints }} / {{ progression.next_tier_min }} points</span>
+                        <span>{{ progression.points_needed }} points to go</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="all-tiers">
+            <h3>All Tiers</h3>
+            <div class="tiers-grid">
+                <div class="tier-card tier-card-bronze {% if loyalty.tier == 'BRONZE' %}tier-active{% endif %}">
+                    <h4>Bronze</h4>
+                    <p class="tier-range">0 - 19,999 pts</p>
+                    <ul class="tier-benefits">
+                        <li>Base tier</li>
+                        <li>Standard support</li>
+                        <li>Earn points</li>
+                    </ul>
+                </div>
+                
+                <div class="tier-card tier-card-silver {% if loyalty.tier == 'SILVER' %}tier-active{% endif %}">
+                    <h4>Silver</h4>
+                    <p class="tier-range">20,000 - 49,999 pts</p>
+                    <p class="tier-discount">5% Discount</p>
+                    <ul class="tier-benefits">
+                        <li>Priority support</li>
+                        <li>5% off bookings</li>
+                        <li>Bonus points</li>
+                    </ul>
+                </div>
+                
+                <div class="tier-card tier-card-gold {% if loyalty.tier == 'GOLD' %}tier-active{% endif %}">
+                    <h4>Gold</h4>
+                    <p class="tier-range">50,000 - 99,999 pts</p>
+                    <p class="tier-discount">10% Discount</p>
+                    <ul class="tier-benefits">
+                        <li>VIP support</li>
+                        <li>10% off bookings</li>
+                        <li>1.5x bonus points</li>
+                    </ul>
+                </div>
+                
+                <div class="tier-card tier-card-platinum {% if loyalty.tier == 'PLATINUM' %}tier-active{% endif %}">
+                    <h4>Platinum</h4>
+                    <p class="tier-range">100,000+ pts</p>
+                    <p class="tier-discount">20% Discount</p>
+                    <ul class="tier-benefits">
+                        <li>Concierge service</li>
+                        <li>20% off bookings</li>
+                        <li>2x bonus points</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Points Overview -->
+    <div class="points-overview">
+        <div class="points-card">
+            <div class="card-icon">⭐</div>
+            <h4>Available Points</h4>
+            <p class="card-value">{{ loyalty.points }}</p>
+            <button class="btn btn-sm btn-primary" onclick="redeemPoints()">Redeem Now</button>
+        </div>
+        
+        <div class="points-card">
+            <div class="card-icon">📊</div>
+            <h4>Total Earned</h4>
+            <p class="card-value">{{ loyalty.totalEarnedPoints }}</p>
+            <p class="card-meta">Lifetime points</p>
+        </div>
+        
+        <div class="points-card">
+            <div class="card-icon">✓</div>
+            <h4>Total Redeemed</h4>
+            <p class="card-value">{{ loyalty.totalRedeemedPoints }}</p>
+            <p class="card-meta">Spent on discounts</p>
+        </div>
+        
+        {% if loyalty.pointsExpiryDate %}
+        <div class="points-card">
+            <div class="card-icon">⏰</div>
+            <h4>Points Expire On</h4>
+            <p class="card-value">{{ loyalty.pointsExpiryDate|date:"M d" }}</p>
+            <p class="card-meta">{{ loyalty.pointsExpiryDate|timeuntil }} left</p>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Redeem Points Section -->
+    <div class="redeem-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Redeem Your Points</h3>
+            </div>
+            <div class="card-body">
+                <div class="redeem-form">
+                    <div class="form-group">
+                        <label>Points to Redeem</label>
+                        <div class="input-group">
+                            <input type="number" id="points-amount" placeholder="Enter points" min="1" max="{{ loyalty.points }}">
+                            <span class="points-value">= €<span id="discount-value">0.00</span></span>
+                        </div>
+                        <small>1 point = €0.01 discount</small>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-lg" onclick="submitRedeem()">Redeem Points</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Transactions -->
+    <div class="transactions-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Recent Transactions</h3>
+                <a href="{% url 'programmeFidilite:points_history' %}" class="btn btn-sm btn-outline">View All</a>
+            </div>
+            <div class="card-body">
+                {% if transactions %}
+                    <div class="transactions-list">
+                        {% for transaction in transactions %}
+                            <div class="transaction-item">
+                                <div class="transaction-icon">
+                                    {% if transaction.transaction_type == 'earn' %}
+                                        ➕
+                                    {% elif transaction.transaction_type == 'redeem' %}
+                                        ➖
+                                    {% elif transaction.transaction_type == 'bonus' %}
+                                        🎁
+                                    {% else %}
+                                        ⏱️
+                                    {% endif %}
+                                </div>
+                                <div class="transaction-info">
+                                    <span class="transaction-type">{{ transaction.get_transaction_type_display }}</span>
+                                    <span class="transaction-desc">{{ transaction.description }}</span>
+                                </div>
+                                <div class="transaction-amount">
+                                    {% if transaction.transaction_type == 'earn' or transaction.transaction_type == 'bonus' %}
+                                        +{{ transaction.points_amount }}
+                                    {% else %}
+                                        -{{ transaction.points_amount }}
+                                    {% endif %}
+                                </div>
+                                <span class="transaction-date">{{ transaction.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">No transactions yet. Start booking to earn points!</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- How It Works -->
+    <div class="how-it-works">
+        <h2>How Our Loyalty Program Works</h2>
+        
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h4>Book a Trip</h4>
+                <p>Make a reservation through Travelia</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h4>Earn Points</h4>
+                <p>Get 10 points per €1 spent + 50% bonus for 5-star hotels</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h4>Unlock Tiers</h4>
+                <p>Reach milestones to get discounts and exclusive perks</p>
+            </div>
+            
+            <div class="step-card">
+                <div class="step-number">4</div>
+                <h4>Redeem & Save</h4>
+                <p>Convert points to discounts (1 point = €0.01)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Update discount value as user types
+    document.getElementById('points-amount').addEventListener('input', function() {
+        const points = parseInt(this.value) || 0;
+        const discount = (points * 0.01).toFixed(2);
+        document.getElementById('discount-value').textContent = discount;
+    });
+    
+    function submitRedeem() {
+        const points = document.getElementById('points-amount').value;
+        if (!points || points <= 0) {
+            alert('Please enter a valid number of points');
+            return;
+        }
+        
+        // Send AJAX request to redeem points
+        fetch('{% url "programmeFidilite:redeem_points" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ points: parseInt(points) })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Successfully redeemed ${points} points for €${data.discount_amount} discount!`);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+    
+    function redeemPoints() {
+        document.querySelector('.redeem-section').scrollIntoView({ behavior: 'smooth' });
+    }
+</script>
+{% endblock %}

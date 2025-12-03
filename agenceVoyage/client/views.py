@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 import logging
 from django.contrib.auth import logout
+from django.views.decorators.http import require_http_methods
 
 logger = logging.getLogger(__name__)
 
@@ -49,16 +50,26 @@ def logoutUser(request):
 
 def addUser(request):
     if request.method == 'POST':
-        first_name = request.POST.get('name', '').strip()
-        last_name = request.POST.get('lastname', '').strip()
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email', '').strip()
         password = request.POST.get('password', '')
+        password_confirm = request.POST.get('password_confirm', '')
 
         logger.info(f"Signup attempt: email={email}, first_name={first_name}, last_name={last_name}")
 
-        if not all([first_name, last_name, email, password]):
+        if not all([first_name, last_name, email, password, password_confirm]):
             logger.warning(f"Missing fields: first_name={bool(first_name)}, last_name={bool(last_name)}, email={bool(email)}, password={bool(password)}")
             messages.error(request, "All fields are required.")
+            return HttpResponseRedirect(reverse('home') + '#signup')
+
+        if password != password_confirm:
+            logger.warning(f"Password mismatch for email: {email}")
+            messages.error(request, "Passwords do not match.")
+            return HttpResponseRedirect(reverse('home') + '#signup')
+
+        if len(password) < 8:
+            messages.error(request, "Password must be at least 8 characters long.")
             return HttpResponseRedirect(reverse('home') + '#signup')
 
         if User.objects.filter(email=email).exists():
@@ -118,10 +129,31 @@ def profile(request):
     if not request.user.is_authenticated:
         messages.error(request, "You must be logged in to view your profile.")
         return redirect('home')
+    
+    user = request.user
+    loyalty = getattr(user, 'loyalty_program', None)
+    preference = getattr(user, 'preference', None)
+    transactions = None
+    bookings = None
+    
+    if loyalty:
+        transactions = loyalty.transactions.all()[:10]
+    
+    if hasattr(user, 'reservations'):
+        bookings = user.reservations.all()[:5]
+    
+    context = {
+        'user': user,
+        'loyalty': loyalty,
+        'preference': preference,
+        'transactions': transactions,
+        'bookings': bookings,
+    }
+    
+    return render(request, 'client/profile.html', context)
 
-    return render(request, 'profile.html', {'user_obj': request.user})
 
-
+@require_http_methods(["GET", "POST"])
 def profile_update(request):
     if not request.user.is_authenticated:
         messages.error(request, "You must be logged in to edit your profile.")
@@ -143,8 +175,16 @@ def profile_update(request):
         if pwd:
             user.set_password(pwd)
         user.save()
+        
+        # Update the session to keep user logged in if password was changed
+        if pwd:
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, user)
+        
         messages.success(request, 'Profile updated successfully.')
-        return redirect('profile')
+        # Use reverse to get the URL instead of redirect name
+        from django.http import HttpResponseRedirect
+        return HttpResponseRedirect(reverse('client:profile'))
 
     return render(request, 'profile_edit.html', {'user_obj': user})
 
