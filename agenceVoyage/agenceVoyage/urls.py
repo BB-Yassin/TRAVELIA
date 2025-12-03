@@ -25,7 +25,7 @@ urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
     path('client/', include('client.urls')),
     path('preferences/', include('preferences.urls')),
-    path('loyalty/', include('programmeFidilite.urls')),
+    path('loyalty/', include('programmeFidilite.urls', namespace='programmeFidilite')),
     path('recommendations/', include('recommandation.urls')),
     path('offreDestination/', include('offreDestination.urls')),
     path('reservations/', include('reservation.urls')),

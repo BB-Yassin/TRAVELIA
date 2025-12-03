@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 import logging
 from django.contrib.auth import logout
+from django.views.decorators.http import require_http_methods
 
 logger = logging.getLogger(__name__)
 
@@ -152,6 +153,7 @@ def profile(request):
     return render(request, 'client/profile.html', context)
 
 
+@require_http_methods(["GET", "POST"])
 def profile_update(request):
     if not request.user.is_authenticated:
         messages.error(request, "You must be logged in to edit your profile.")
@@ -173,8 +175,16 @@ def profile_update(request):
         if pwd:
             user.set_password(pwd)
         user.save()
+        
+        # Update the session to keep user logged in if password was changed
+        if pwd:
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, user)
+        
         messages.success(request, 'Profile updated successfully.')
-        return redirect('profile')
+        # Use reverse to get the URL instead of redirect name
+        from django.http import HttpResponseRedirect
+        return HttpResponseRedirect(reverse('client:profile'))
 
     return render(request, 'profile_edit.html', {'user_obj': user})
 
